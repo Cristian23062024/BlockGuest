@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlockQuest · Aprende blockchain jugando</title>
+<meta name="description" content="Juego educativo para aprender hashes, nonce, Proof of Work y cadenas de bloques.">
+<style>
+:root{--bg:#0b1020;--panel:#131a30;--panel2:#1a2342;--line:#2a3560;--txt:#e6ecff;--mut:#8f9bc4;--ok:#35e08a;--bad:#ff5470;--warn:#ffc857;--acc:#5ad1ff;--acc2:#a78bfa}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1200px 600px at 20% -10%,#1a2760 0,transparent 60%),var(--bg);color:var(--txt);font:16px/1.55 system-ui,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+header{position:sticky;top:0;z-index:5;background:#0b1020ee;backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top{max-width:1100px;margin:auto;padding:10px 16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.logo{font-weight:800;font-size:20px;letter-spacing:.5px;cursor:pointer}
+.logo span{color:var(--acc)}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button{padding:6px 11px;font-size:14px}
+nav button.on{background:var(--acc);color:#04101c;border-color:var(--acc);font-weight:700}
+main{max-width:1100px;margin:auto;padding:20px 16px 60px}
+h2{margin:.2em 0 .4em;font-size:26px}
+h3{margin:.1em 0 .5em}
+.view{display:none}.view.on{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+@media(max-width:800px){.grid2{grid-template-columns:1fr}}
+.mut{color:var(--mut)}
+button{cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--txt);border-radius:10px;padding:8px 14px;font:inherit}
+button:hover:not(:disabled){border-color:var(--acc)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.pri{background:var(--acc);color:#04101c;border-color:var(--acc);font-weight:700}
+button.ok{background:var(--ok);color:#03180d;border-color:var(--ok);font-weight:700}
+button.bad{background:var(--bad);color:#210510;border-color:var(--bad);font-weight:700}
+input,textarea{width:100%;background:#0a0f20;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
+input[type=range]{padding:0}
+label,.lbl{display:block;color:var(--mut);font-size:13px;margin:10px 0 4px;text-transform:uppercase;letter-spacing:.6px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.hash{font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all;background:#0a0f20;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px}
+.hash.sm{font-size:12.5px;padding:5px 8px}
+.hash.big{font-size:15px}
+.hash.dim{color:var(--mut)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+.lead.ok{color:var(--ok);font-weight:700}
+.lead.no{color:var(--bad);font-weight:700}
+.df{background:#ffc85733;color:var(--warn)}
+.yes{color:var(--ok);font-weight:700}.no{color:var(--bad);font-weight:700}
+.stat{margin-top:10px;color:var(--warn)}
+.goals{list-style:none;padding:0;margin:0}
+.goals li{padding:6px 0;color:var(--mut)}
+.goals li::before{content:"⬜ "}
+.goals li.done{color:var(--ok)}
+.goals li.done::before{content:"✅ "}
+.mini{background:#0f1630;border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:10px;padding:8px 10px;font-size:13px}
+.mini .hash{border:none;padding:2px 0;background:none;font-size:12px}
+.link{text-align:center;color:var(--mut);font-size:13px;margin:2px 0}
+.kv{margin-bottom:6px}.kv>span{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.chks{margin:12px 0;display:grid;gap:8px}
+.chks>div{background:#0f1630;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.chks button{padding:3px 10px;font-size:13px;margin-left:6px}
+.hud{display:flex;gap:18px;flex-wrap:wrap;margin:8px 0;font-size:18px}
+#belt{position:relative;height:132px;background:repeating-linear-gradient(90deg,transparent 0 28px,#1a234288 28px 30px),#0d1429;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+#gate{position:absolute;left:0;top:0;bottom:0;width:8px;background:var(--acc);box-shadow:0 0 18px var(--acc);z-index:2}
+.blk{position:absolute;left:0;top:12px;width:150px;height:108px;background:var(--panel2);border:2px solid var(--line);border-radius:12px;padding:8px 10px;font-size:13px;display:flex;flex-direction:column;gap:3px;will-change:transform;overflow:hidden}
+.blk small{color:var(--mut);font-size:12px;line-height:1.3}
+.blk.front{border-color:var(--acc);box-shadow:0 0 16px #5ad1ff66}
+#m3timer{height:8px;background:#0a0f20;border-radius:6px;margin:10px 0;overflow:hidden;border:1px solid var(--line)}
+#m3timer i{display:block;height:100%;width:0;background:var(--ok);transition:background .3s}
+#m3fb{min-height:48px;padding:10px 12px;border-radius:10px;margin:10px 0;background:#0f1630;border:1px solid var(--line)}
+#m3fb.good{border-color:var(--ok)}#m3fb.wrong{border-color:var(--bad)}
+#m3over{display:none;position:absolute;inset:0;background:#0b1020e6;z-index:4;align-items:center;justify-content:center;text-align:center;font-size:20px;flex-direction:column;gap:6px}
+.m4b{background:var(--panel);border:2px solid var(--ok);border-radius:12px;padding:12px}
+.m4b.bad{border-color:var(--bad)}
+.m4b h4{margin:0 0 4px}
+.m4arrow{text-align:center;color:var(--mut);margin:4px 0}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:var(--ok);color:#03180d;font-weight:700;padding:10px 18px;border-radius:12px;opacity:0;transition:.35s;z-index:20;pointer-events:none}
+#toast.on{transform:translateX(-50%);opacity:1}
+dl dt{font-weight:700;color:var(--acc);margin-top:10px}
+dl dd{margin:0 0 0 0;color:var(--txt)}
+.chain-demo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.chain-demo .b{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px}
+.chain-demo .b small{display:block;color:var(--mut)}
+footer{text-align:center;color:var(--mut);font-size:13px;padding:20px}
+footer button{font-size:12px;padding:4px 10px}
+</style>
+</head>
+<body>
+<header><div class="top">
+  <div class="logo" data-go="home">⛓ Block<span>Quest</span></div>
+  <nav id="nav"></nav>
+</div></header>
+
+<main>
+<!-- ============ INICIO ============ -->
+<section id="home" class="view">
+  <h2>Aprende blockchain jugando</h2>
+  <p>Una <b>cadena de bloques</b> es una lista de bloques enlazados. Cada bloque guarda unos datos, un número llamado <b>nonce</b>, el <b>hash del bloque anterior</b> y su propio hash. Si alguien cambia un bloque antiguo, su hash cambia, el enlace se rompe y toda la cadena posterior deja de ser válida.</p>
+  <div class="chain-demo">
+    <div class="b"><b>Bloque 1</b><small>prev: 0000…</small><small>hash: 00a3…</small></div>➜
+    <div class="b"><b>Bloque 2</b><small>prev: 00a3…</small><small>hash: 007f…</small></div>➜
+    <div class="b"><b>Bloque 3</b><small>prev: 007f…</small><small>hash: 00c1…</small></div>
+  </div>
+  <p class="mut">El truco de la <b>Proof of Work</b>: para añadir un bloque hay que encontrar un nonce que haga que su hash empiece por varios ceros. Es difícil de encontrar, pero fácil de comprobar.</p>
+  <h3>Misiones</h3>
+  <div class="grid3" id="homeCards"></div>
+  <div class="card"><b>Progreso:</b> <span id="homeProg"></span></div>
+</section>
+
+<!-- ============ MISIÓN 1 ============ -->
+<section id="m1" class="view">
+  <h2>Misión 1 · El hash, la huella digital</h2>
+  <p>Una <b>función hash</b> (aquí <b>SHA-256</b>) convierte cualquier texto en una huella de 64 caracteres hexadecimales. Mismo texto → misma huella. Cambias una sola letra → huella totalmente distinta.</p>
+  <div class="card">
+    <label for="m1in">Escribe cualquier texto</label>
+    <textarea id="m1in" rows="2">Hola blockchain</textarea>
+    <div class="row"><button id="m1rand">🎲 Añadir un número aleatorio al final</button></div>
+    <div class="lbl">Hash SHA-256 (256 bits = 64 caracteres hex)</div>
+    <div id="m1hash" class="hash big"></div>
+    <div class="lbl">Hash del estado anterior (antes de tu último cambio)</div>
+    <div id="m1prev" class="hash dim">—</div>
+    <div id="m1diff" class="stat"></div>
+  </div>
+  <div class="card">
+    <h3>Objetivos</h3>
+    <ul class="goals" id="m1goals">
+      <li data-g="a">Cambia <b>una letra por otra</b> (sin añadir ni borrar) y observa el efecto avalancha.</li>
+      <li data-g="b">Vuelve a un texto que ya habías escrito: obtendrás <b>exactamente el mismo hash</b> (es determinista).</li>
+      <li data-g="c">Consigue un texto cuyo hash <b>empiece por 0</b>. Truco: usa el botón del dado varias veces. ¡Esto es lo que hacen los mineros!</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ MISIÓN 2 ============ -->
+<section id="m2" class="view">
+  <h2>Misión 2 · Minar bloques (Proof of Work)</h2>
+  <p>Para sellar un bloque debes encontrar un <b>nonce</b> que haga que el hash empiece por N ceros. No hay atajo: hay que probar y probar. Sella <b>3 bloques</b> para completar la misión.</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>Bloque #<span id="m2idx"></span></h3>
+      <label>Hash previo (enlace con el bloque anterior)</label>
+      <div id="m2prev" class="hash dim sm"></div>
+      <label for="m2data">Datos</label>
+      <input id="m2data" value="Ana → Beto: 5 monedas">
+      <label for="m2nonce">Nonce</label>
+      <div class="row" style="margin-top:0">
+        <button id="m2minus">−1</button>
+        <input id="m2nonce" type="number" value="0" style="width:140px">
+        <button id="m2plus">+1</button>
+        <button id="m2rand">🎲 Aleatorio</button>
+      </div>
+      <label>Hash resultante</label>
+      <div id="m2hash" class="hash big"></div>
+      <div id="m2status" style="margin:8px 0"></div>
+      <label for="m2diff">Dificultad: el hash debe empezar con <b id="m2dtxt"></b> ceros</label>
+      <input id="m2diff" type="range" min="1" max="5" value="2">
+      <div class="row">
+        <button id="m2mine" class="pri">⛏ Minar automático</button>
+        <button id="m2seal" class="ok" disabled>🔗 Sellar bloque</button>
+      </div>
+      <div id="m2stats" class="stat"></div>
+    </div>
+    <div class="card">
+      <h3>Tu cadena</h3>
+      <div id="m2chain"></div>
+      <div class="row"><button id="m2reset">↺ Reiniciar cadena</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MISIÓN 3 ============ -->
+<section id="m3" class="view">
+  <h2>Misión 3 · Nodo validador</h2>
+  <p>Los bloques llegan por la cinta. Solo puedes juzgar el que está en la <b style="color:var(--acc)">puerta azul</b>. Comprueba tres cosas: <b>(1)</b> el hash cumple la dificultad, <b>(2)</b> su hash previo es el del último bloque de tu cadena, <b>(3)</b> al recalcular el SHA-256 sale el mismo hash. Si falla alguna, ¡recházalo! Teclas: <b>A</b> aceptar · <b>R</b> rechazar · <b>V</b> comprobar todo.</p>
+  <div class="hud">
+    <span>❤ <b id="m3lives">3</b></span><span>⭐ <b id="m3score">0</b></span><span>Nivel <b id="m3lvl">1</b></span><span>Mejor <b id="m3best">0</b></span>
+  </div>
+  <div id="belt"><div id="gate"></div><div id="lane"></div>
+    <div id="m3over"></div>
+  </div>
+  <div id="m3timer"><i></i></div>
+  <div id="m3fb">Pulsa «Empezar turno» para recibir tu primer bloque. Alcanza el nivel 3 para completar la misión.</div>
+  <div class="row"><button id="m3start" class="pri">▶ Empezar turno</button></div>
+  <div class="grid2">
+    <div class="card" id="m3insp"></div>
+    <div class="card"><h3>Tu cadena aceptada (últimos bloques)</h3><div id="m3chain"></div></div>
+  </div>
+</section>
+
+<!-- ============ MISIÓN 4 ============ -->
+<section id="m4" class="view">
+  <h2>Misión 4 · Intenta falsificar la historia</h2>
+  <p>Esta cadena ya está minada. <b>Edita los datos de un bloque</b> (prueba con el #1) y mira cómo se rompen todos los bloques siguientes. Para repararla tendrás que <b>re-minar</b> cada bloque afectado, uno por uno. Por eso es tan costoso alterar el pasado en una blockchain real.</p>
+  <div class="card"><div id="m4msg"></div><div id="m4work" class="stat"></div></div>
+  <div id="m4chain"></div>
+  <div class="row"><button id="m4reset">↺ Restaurar cadena original</button></div>
+</section>
+
+<!-- ============ GLOSARIO ============ -->
+<section id="gloss" class="view">
+  <h2>Glosario</h2>
+  <div class="card"><dl>
+    <dt>Hash</dt><dd>Huella digital de longitud fija que resulta de aplicar una función matemática a unos datos. No se puede «deshacer» para recuperar el original.</dd>
+    <dt>SHA-256</dt><dd>Función hash usada por Bitcoin. Siempre devuelve 256 bits (64 caracteres hexadecimales).</dd>
+    <dt>Determinista</dt><dd>La misma entrada siempre produce el mismo hash.</dd>
+    <dt>Efecto avalancha</dt><dd>Un cambio mínimo en la entrada cambia aproximadamente la mitad de los bits del hash.</dd>
+    <dt>Bloque</dt><dd>Paquete de datos (por ejemplo, transacciones) junto con su nonce, el hash del bloque anterior y su propio hash.</dd>
+    <dt>Hash previo</dt><dd>Hash del bloque anterior. Es lo que «encadena» los bloques entre sí.</dd>
+    <dt>Bloque génesis</dt><dd>El primer bloque de una cadena, sin bloque anterior.</dd>
+    <dt>Nonce</dt><dd>«Number used once». Número que el minero va cambiando hasta que el hash del bloque cumple la dificultad.</dd>
+    <dt>Minería</dt><dd>Probar nonces una y otra vez hasta encontrar uno válido para el bloque.</dd>
+    <dt>Proof of Work (PoW)</dt><dd>Prueba de trabajo: un hash válido demuestra que se invirtió esfuerzo de cómputo. Es costoso de producir y muy barato de verificar.</dd>
+    <dt>Dificultad</dt><dd>Condición que debe cumplir el hash, por ejemplo empezar por N ceros. Cada cero extra multiplica por 16 el trabajo esperado.</dd>
+    <dt>Nodo</dt><dd>Computadora de la red que guarda la cadena y valida los bloques nuevos antes de aceptarlos.</dd>
+    <dt>Validación</dt><dd>Comprobar que un bloque cumple la dificultad, enlaza con el bloque anterior y que su hash se recalcula igual.</dd>
+    <dt>Inmutabilidad</dt><dd>Cambiar un bloque antiguo obliga a re-minar ese bloque y todos los siguientes, lo que lo hace prácticamente inviable.</dd>
+  </dl></div>
+</section>
+</main>
+
+<footer>BlockQuest · juego educativo · <button id="resetProg">Borrar progreso</button></footer>
+<div id="toast"></div>
+
+<script>
+/*PURE_START*/
+// ===== SHA-256 (síncrono, sin dependencias) =====
+const K=new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+const W256=new Uint32Array(64);
+function sha256(str){
+  const m=new TextEncoder().encode(str), l=m.length;
+  const n=((l+9+63)>>6)<<6, buf=new Uint8Array(n);
+  buf.set(m); buf[l]=0x80;
+  const dv=new DataView(buf.buffer);
+  dv.setUint32(n-4,(l*8)>>>0); dv.setUint32(n-8,Math.floor(l*8/4294967296));
+  let h0=0x6a09e667,h1=0xbb67ae85,h2=0x3c6ef372,h3=0xa54ff53a,h4=0x510e527f,h5=0x9b05688c,h6=0x1f83d9ab,h7=0x5be0cd19;
+  const w=W256;
+  for(let o=0;o<n;o+=64){
+    for(let i=0;i<16;i++)w[i]=dv.getUint32(o+i*4);
+    for(let i=16;i<64;i++){
+      const x=w[i-15],y=w[i-2];
+      const s0=((x>>>7)|(x<<25))^((x>>>18)|(x<<14))^(x>>>3);
+      const s1=((y>>>17)|(y<<15))^((y>>>19)|(y<<13))^(y>>>10);
+      w[i]=(w[i-16]+s0+w[i-7]+s1)|0;
+    }
+    let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7;
+    for(let i=0;i<64;i++){
+      const S1=((e>>>6)|(e<<26))^((e>>>11)|(e<<21))^((e>>>25)|(e<<7));
+      const ch=(e&f)^(~e&g);
+      const t1=(h+S1+ch+K[i]+w[i])|0;
+      const S0=((a>>>2)|(a<<30))^((a>>>13)|(a<<19))^((a>>>22)|(a<<10));
+      const mj=(a&b)^(a&c)^(b&c);
+      const t2=(S0+mj)|0;
+      h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;
+    }
+    h0=(h0+a)|0;h1=(h1+b)|0;h2=(h2+c)|0;h3=(h3+d)|0;h4=(h4+e)|0;h5=(h5+f)|0;h6=(h6+g)|0;h7=(h7+h)|0;
+  }
+  return [h0,h1,h2,h3,h4,h5,h6,h7].map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');
+}
+
+// ===== Utilidades de bloques =====
+const ZERO='0'.repeat(64);
+const rand=n=>Math.floor(Math.random()*n);
+const randHex=n=>Array.from({length:n},()=>'0123456789abcdef'[rand(16)]).join('');
+const NAMES=['Ana','Beto','Carla','Dani','Eva','Fabi','Gus','Hugo'];
+function randTx(){const a=rand(NAMES.length);let b=rand(NAMES.length);if(b===a)b=(b+1)%NAMES.length;return `${NAMES[a]} → ${NAMES[b]}: ${1+rand(20)} monedas`;}
+const tamper=t=>t.replace(/\d+/,m=>String(+m+1+rand(8)));
+const hashBlock=b=>sha256(`${b.index}|${b.prev}|${b.data}|${b.nonce}`);
+function mineSync(index,prev,data,d,start=0){
+  const t='0'.repeat(d);
+  for(let n=start;;n++){const h=sha256(`${index}|${prev}|${data}|${n}`);if(h.startsWith(t))return{nonce:n,hash:h};}
+}
+function genBlock(index,tip,diff,kind,altPrev){
+  const data=randTx(), t='0'.repeat(diff), prev=kind==='prev'?altPrev:tip;
+  const b={index,prev,data,nonce:0,diff,kind};
+  if(kind==='pow'){do{b.nonce=rand(1e6);b.hash=hashBlock(b);}while(b.hash.startsWith(t));}
+  else{const r=mineSync(index,prev,data,diff,rand(1000));b.nonce=r.nonce;b.hash=r.hash;if(kind==='data')b.data=tamper(data);}
+  return b;
+}
+function analyze(b,tip){const re=hashBlock(b);return{pow:b.hash.startsWith('0'.repeat(b.diff)),link:b.prev===tip,same:re===b.hash,re};}
+function oneSub(a,b){if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)if(a[i]!==b[i]&&++d>1)return false;return d===1;}
+function bitDiff(h1,h2){let n=0;for(let i=0;i<64;i++){let x=parseInt(h1[i],16)^parseInt(h2[i],16);while(x){n+=x&1;x>>=1;}}return n;}
+/*PURE_END*/
+
+// ===== Helpers de interfaz =====
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const short=(h,n=8)=>h.slice(0,n)+'…'+h.slice(-4);
+function hl(hash,d){const lead=hash.slice(0,d),ok=lead===ZERO.slice(0,d);return `<span class="lead ${ok?'ok':'no'}">${lead}</span>${hash.slice(d)}`;}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2600);}
+
+// ===== Progreso =====
+const save={done:{},best:0};
+try{Object.assign(save,JSON.parse(localStorage.getItem('blockquest')||'{}'));}catch(e){}
+function persist(){try{localStorage.setItem('blockquest',JSON.stringify(save));}catch(e){}}
+function complete(m){if(!save.done[m]){save.done[m]=true;persist();toast('🎉 ¡Misión completada!');renderNav();renderHome();}}
+
+// ===== Navegación =====
+const MISSIONS={m1:['🔑','1 · Hash','Descubre qué es un hash y el efecto avalancha.'],m2:['⛏','2 · Minar','Encuentra el nonce y sella bloques con Proof of Work.'],m3:['🛡','3 · Validar','Acepta o rechaza bloques que llegan por la cinta.'],m4:['🕵','4 · Atacar','Intenta falsificar el pasado y mira por qué es tan caro.']};
+let cur='home';
+function renderNav(){
+  $('#nav').innerHTML=`<button data-go="home">🏠 Inicio</button>`+Object.entries(MISSIONS).map(([k,v])=>`<button data-go="${k}">${save.done[k]?'✅':v[0]} ${v[1]}</button>`).join('')+`<button data-go="gloss">📖 Glosario</button>`;
+  $$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.go===cur));
+}
+function renderHome(){
+  $('#homeCards').innerHTML=Object.entries(MISSIONS).map(([k,v])=>`<div class="card" style="margin:0"><h3>${save.done[k]?'✅':v[0]} Misión ${v[1]}</h3><p class="mut">${v[2]}</p><button class="pri" data-go="${k}">Jugar</button></div>`).join('');
+  $('#homeProg').textContent=`${Object.keys(MISSIONS).filter(k=>save.done[k]).length} de 4 misiones completadas`;
+}
+function go(id){
+  if(cur==='m3'&&id!=='m3')stopBelt();
+  cur=id;$$('.view').forEach(v=>v.classList.toggle('on',v.id===id));renderNav();window.scrollTo(0,0);
+}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-go]');if(t)go(t.dataset.go);});
+
+// ===== MISIÓN 1: Hash =====
+const m1={lastIn:null,lastHash:null,seen:new Set(),g:{a:false,b:false,c:false}};
+function m1update(){
+  const v=$('#m1in').value;
+  if(m1.lastIn!==null&&v===m1.lastIn)return;
+  const h=sha256(v);
+  const prevH=m1.lastHash;
+  if(m1.lastIn!==null){
+    if(oneSub(m1.lastIn,v))m1.g.a=true;
+    if(m1.seen.has(v))m1.g.b=true;
+  }
+  if(h[0]==='0')m1.g.c=true;
+  m1.seen.add(v);
+  let html='';
+  for(let i=0;i<64;i++)html+=(prevH&&prevH[i]!==h[i])?`<span class="df">${h[i]}</span>`:h[i];
+  $('#m1hash').innerHTML=html;
+  $('#m1prev').textContent=prevH||'—';
+  if(prevH){const bits=bitDiff(prevH,h);$('#m1diff').textContent=`Cambiaron ${bits} de 256 bits (${Math.round(bits/2.56)}%). Los caracteres resaltados son los que cambiaron.`;}
+  else $('#m1diff').textContent='';
+  m1.lastIn=v;m1.lastHash=h;
+  $$('#m1goals li').forEach(li=>li.classList.toggle('done',m1.g[li.dataset.g]));
+  if(m1.g.a&&m1.g.b&&m1.g.c)complete('m1');
+}
+$('#m1in').addEventListener('input',m1update);
+$('#m1rand').onclick=()=>{const el=$('#m1in');el.value=el.value.replace(/ #\d+$/,'')+' #'+rand(100000);m1update();};
+
+// ===== MISIÓN 2: Minería =====
+const m2={chain:[],mining:false,cancel:false,tries:0};
+const m2prevHash=()=>m2.chain.length?m2.chain[m2.chain.length-1].hash:ZERO;
+function m2cur(){return{index:m2.chain.length+1,prev:m2prevHash(),data:$('#m2data').value,nonce:parseInt($('#m2nonce').value)||0};}
+function m2refresh(){
+  const b=m2cur(),d=+$('#m2diff').value,h=hashBlock(b),ok=h.startsWith('0'.repeat(d));
+  $('#m2idx').textContent=b.index;$('#m2prev').textContent=b.prev;$('#m2dtxt').textContent=d;
+  $('#m2hash').innerHTML=hl(h,d);
+  $('#m2status').innerHTML=ok?'✅ <b class="yes">¡Hash válido!</b> Cumple la dificultad: ya puedes sellar el bloque.':'⛔ Todavía no cumple la dificultad. Cambia el nonce.';
+  $('#m2seal').disabled=!ok||m2.mining;
+  $('#m2stats').textContent=`Intentos manuales: ${m2.tries}`;
+  return{ok,h};
+}
+function m2chainRender(){
+  $('#m2chain').innerHTML=m2.chain.length?m2.chain.map(b=>`<div class="mini"><b>Bloque #${b.index}</b> · nonce ${b.nonce}<br><span class="mut">prev</span> <span class="mono">${short(b.prev)}</span><br><span class="mut">datos</span> ${esc(b.data)}<div class="hash">${hl(b.hash,b.diff)}</div></div>`).join('<div class="link">⬇ 🔗 enlazado por el hash</div>'):'<p class="mut">Aún no hay bloques sellados.</p>';
+}
+function m2bump(dn){const el=$('#m2nonce');el.value=(parseInt(el.value)||0)+dn;m2.tries++;m2refresh();}
+$('#m2minus').onclick=()=>m2bump(-1);
+$('#m2plus').onclick=()=>m2bump(1);
+$('#m2rand').onclick=()=>{$('#m2nonce').value=rand(1000000);m2.tries++;m2refresh();};
+$('#m2nonce').addEventListener('input',()=>{m2.tries++;m2refresh();});
+$('#m2data').addEventListener('input',m2refresh);
+$('#m2diff').addEventListener('input',m2refresh);
+$('#m2mine').onclick=async()=>{
+  if(m2.mining){m2.cancel=true;return;}
+  m2.mining=true;m2.cancel=false;
+  const btn=$('#m2mine');btn.textContent='⏹ Detener';$('#m2diff').disabled=true;$('#m2seal').disabled=true;
+  const b=m2cur(),d=+$('#m2diff').value,target='0'.repeat(d),pre=`${b.index}|${b.prev}|${b.data}|`;
+  let n=b.nonce,tries=0,found=false;const t0=performance.now();
+  while(!m2.cancel&&!found){
+    for(let i=0;i<3000;i++){const h=sha256(pre+n);tries++;if(h.startsWith(target)){found=true;break;}n++;}
+    $('#m2nonce').value=n;
+    const s=(performance.now()-t0)/1000;
+    $('#m2stats').textContent=`⛏ Probados ${tries.toLocaleString()} nonces · ${Math.round(tries/Math.max(s,.001)).toLocaleString()} hashes/s`;
+    if(!found)await new Promise(r=>setTimeout(r));
+  }
+  m2.mining=false;btn.textContent='⛏ Minar automático';$('#m2diff').disabled=false;
+  const s=(performance.now()-t0)/1000;
+  $('#m2stats').textContent=(found?`✅ ¡Encontrado! `:`Detenido. `)+`Se probaron ${tries.toLocaleString()} nonces en ${s.toFixed(2)} s.`;
+  m2refresh();
+};
+$('#m2seal').onclick=()=>{
+  const b=m2cur(),d=+$('#m2diff').value,h=hashBlock(b);
+  if(!h.startsWith('0'.repeat(d)))return;
+  m2.chain.push({...b,hash:h,diff:d});
+  $('#m2nonce').value=0;m2.tries=0;
+  $('#m2data').value=randTx();
+  m2chainRender();m2refresh();
+  if(m2.chain.length>=3)complete('m2');else toast(`🔗 Bloque #${b.index} sellado`);
+};
+$('#m2reset').onclick=()=>{if(m2.mining)return;m2.chain=[];m2.tries=0;$('#m2nonce').value=0;m2chainRender();m2refresh();};
+
+// ===== MISIÓN 3: Nodo validador =====
+const BW=150,GAP=12,GATE=16;
+const m3={run:false,q:[],chain:[],lives:3,score:0,lvl:1,done:0,genIdx:1,tipGen:ZERO,spawnAcc:0,last:0,raf:0};
+const cfg=()=>({diff:m3.lvl>=3?3:2,patience:Math.max(9000,25000-(m3.lvl-1)*3500),spawn:Math.max(2500,6500-(m3.lvl-1)*700),speed:230+m3.lvl*30});
+const tip=()=>m3.chain[m3.chain.length-1].hash;
+function m3hud(){$('#m3lives').textContent='❤'.repeat(Math.max(0,m3.lives))||'💀';$('#m3score').textContent=m3.score;$('#m3lvl').textContent=m3.lvl;$('#m3best').textContent=save.best;}
+function m3renderChain(){
+  $('#m3chain').innerHTML=m3.chain.slice(-4).map(b=>`<div class="mini"><b>Bloque #${b.index}</b><div class="hash">${hl(b.hash,b.diff)}</div></div>`).join('<div class="link">⬇</div>');
+}
+function setFb(html,cls){const f=$('#m3fb');f.innerHTML=html;f.className=cls||'';}
+function reason(f){
+  return {valid:'cumple la dificultad, enlaza con el último bloque y el hash coincide al recalcularlo.',
+    pow:`su hash no empieza con ${f.diff} ceros: no hay Proof of Work.`,
+    prev:'su hash previo no es el hash del último bloque de la cadena.',
+    data:'los datos fueron alterados: al recalcular el SHA-256 sale otro hash distinto al declarado.'}[f.kind];
+}
+function m3start(){
+  cancelAnimationFrame(m3.raf);
+  Object.assign(m3,{run:true,q:[],chain:[],lives:3,score:0,lvl:1,done:0,spawnAcc:1e9});
+  $('#lane').innerHTML='';$('#m3over').style.display='none';
+  const d=cfg().diff,g=mineSync(0,ZERO,'Bloque génesis',d);
+  m3.chain.push({index:0,prev:ZERO,data:'Bloque génesis',nonce:g.nonce,hash:g.hash,diff:d});
+  m3.tipGen=g.hash;m3.genIdx=1;
+  m3hud();m3renderChain();renderInspector();
+  setFb('¡Turno iniciado! Espera a que el primer bloque llegue a la puerta.');
+  $('#m3start').textContent='↺ Reiniciar turno';
+  m3.last=performance.now();m3.raf=requestAnimationFrame(tick);
+}
+function stopBelt(){m3.run=false;cancelAnimationFrame(m3.raf);$('#m3start').textContent='▶ Empezar turno';}
+function spawn(){
+  const c=cfg(),pool=m3.lvl===1?['pow','prev']:['pow','prev','data'];
+  const kind=Math.random()<0.5?'valid':pool[rand(pool.length)];
+  const alt=m3.chain.length>1?m3.chain[m3.chain.length-2].hash:randHex(64);
+  const b=genBlock(m3.genIdx,m3.tipGen,c.diff,kind,alt);
+  if(kind==='valid'){m3.tipGen=b.hash;m3.genIdx++;}
+  const el=document.createElement('div');el.className='blk';
+  el.innerHTML=`<b>Bloque #${b.index}</b><small>${esc(b.data)}</small><small class="mono">hash ${b.hash.slice(0,10)}…</small>`;
+  b.x=$('#lane').clientWidth+20;b.el=el;b.front=false;b.since=0;b.checks={pow:false,link:false,same:false};
+  el.style.transform=`translateX(${b.x}px)`;
+  $('#lane').appendChild(el);m3.q.push(b);
+}
+function tick(t){
+  if(!m3.run)return;
+  const dt=Math.min(50,t-m3.last)/1000;m3.last=t;
+  const c=cfg();
+  m3.spawnAcc+=dt*1000;
+  if(m3.q.length<5&&m3.spawnAcc>=c.spawn){m3.spawnAcc=0;spawn();}
+  m3.q.forEach((b,i)=>{
+    const tx=GATE+i*(BW+GAP);
+    b.x=Math.max(tx,b.x-c.speed*dt);
+    b.el.style.transform=`translateX(${b.x}px)`;
+    if(i===0&&b.x<=tx+0.5&&!b.front){b.front=true;b.since=t;b.el.classList.add('front');renderInspector();}
+  });
+  const f=m3.q[0],bar=$('#m3timer i');
+  if(f&&f.front){
+    const left=c.patience-(t-f.since),pct=Math.max(0,left/c.patience*100);
+    bar.style.width=pct+'%';bar.style.background=pct>50?'var(--ok)':pct>25?'var(--warn)':'var(--bad)';
+    if(left<=0){resolve(f,null,true);}
+  }else bar.style.width='0';
+  if(m3.run)m3.raf=requestAnimationFrame(tick);
+}
+function resolve(f,acc,timedOut){
+  const valid=f.kind==='valid',correct=!timedOut&&acc===valid;
+  const c=cfg(),now=performance.now();
+  if(correct){
+    const bonus=Math.round(Math.max(0,(c.patience-(now-f.since))/c.patience*10));
+    m3.score+=10+bonus;
+    setFb(`✅ ${acc?'Bloque aceptado':'Bloque rechazado'} correctamente (+${10+bonus}): ${reason(f)}`,'good');
+  }else{
+    m3.lives--;
+    setFb(`❌ ${timedOut?'Se acabó el tiempo. ':''}El bloque era <b>${valid?'válido':'inválido'}</b>: ${reason(f)}`,'wrong');
+  }
+  if(valid)m3.chain.push({index:f.index,prev:f.prev,data:f.data,nonce:f.nonce,hash:f.hash,diff:f.diff});
+  f.el.remove();m3.q.shift();m3.done++;
+  if(m3.lives>0&&m3.done%5===0){m3.lvl++;toast(`⬆ ¡Nivel ${m3.lvl}!`);if(m3.lvl>=3)complete('m3');}
+  m3hud();m3renderChain();renderInspector();
+  $('#m3timer i').style.width='0';
+  if(m3.lives<=0)gameOver();
+}
+function gameOver(){
+  stopBelt();
+  if(m3.score>save.best){save.best=m3.score;persist();}
+  m3hud();
+  const o=$('#m3over');o.style.display='flex';
+  o.innerHTML=`<b>💀 Fin de la partida</b><span>Puntuación: ${m3.score} · Nivel ${m3.lvl}</span><span class="mut" style="font-size:15px">Pulsa «Empezar turno» para volver a intentarlo</span>`;
+}
+function decide(acc){const f=m3.q[0];if(m3.run&&f&&f.front)resolve(f,acc,false);}
+function renderInspector(){
+  const box=$('#m3insp'),f=m3.q[0];
+  if(!m3.run){box.innerHTML='<h3>🔍 Inspector</h3><p class="mut">Aquí verás los detalles del bloque que está en la puerta.</p>';return;}
+  if(!f||!f.front){box.innerHTML='<h3>🔍 Inspector</h3><p class="mut">Esperando el siguiente bloque…</p>';return;}
+  const tp=tip(),an=analyze(f,tp),c=f.checks;
+  box.innerHTML=`<h3>🔍 Inspeccionando bloque #${f.index}</h3>
+  <div class="kv"><span>Hash previo declarado</span><div class="hash sm">${f.prev}</div></div>
+  <div class="kv"><span>Datos</span><div class="hash sm">${esc(f.data)}</div></div>
+  <div class="kv"><span>Nonce</span><div class="hash sm">${f.nonce}</div></div>
+  <div class="kv"><span>Hash declarado</span><div class="hash sm">${hl(f.hash,f.diff)}</div></div>
+  <div class="chks">
+   <div>1️⃣ ¿Cumple la dificultad (${f.diff} ceros)? ${c.pow?(an.pow?'<span class="yes">✔ Sí</span>':'<span class="no">✘ No</span>'):'<button data-act="pow">Comprobar</button>'}</div>
+   <div>2️⃣ ¿Su hash previo es el de tu último bloque (<code>${short(tp)}</code>)? ${c.link?(an.link?'<span class="yes">✔ Sí</span>':'<span class="no">✘ No coincide</span>'):'<button data-act="link">Comprobar</button>'}</div>
+   <div>3️⃣ ¿Recalcular el SHA-256 da el mismo hash? ${c.same?(an.same?'<span class="yes">✔ Sí</span>':`<span class="no">✘ No</span><div class="hash sm" style="margin-top:6px">Recalculado: ${an.re}</div>`):'<button data-act="same">Recalcular</button>'}</div>
+  </div>
+  <div class="row"><button data-act="all">Comprobar todo (V)</button><button class="ok" data-act="acc">✅ Aceptar (A)</button><button class="bad" data-act="rej">❌ Rechazar (R)</button></div>`;
+}
+$('#m3insp').addEventListener('click',e=>{
+  const a=e.target.dataset.act,f=m3.q[0];
+  if(!a||!m3.run||!f||!f.front)return;
+  if(a==='acc')return decide(true);
+  if(a==='rej')return decide(false);
+  if(a==='all'){f.checks.pow=f.checks.link=f.checks.same=true;}else f.checks[a]=true;
+  renderInspector();
+});
+document.addEventListener('keydown',e=>{
+  if(cur!=='m3'||!m3.run||e.target.matches('input,textarea'))return;
+  const k=e.key.toLowerCase(),f=m3.q[0];
+  if(k==='a')decide(true);else if(k==='r')decide(false);
+  else if(k==='v'&&f&&f.front){f.checks.pow=f.checks.link=f.checks.same=true;renderInspector();}
+});
+$('#m3start').onclick=m3start;
+
+// ===== MISIÓN 4: Atacar la cadena =====
+const M4D=3;
+const m4={blocks:[],work:0,attacked:false,remined:false,busy:false};
+const M4DATA=['Ana → Beto: 5 monedas','Beto → Carla: 2 monedas','Carla → Dani: 1 moneda','Dani → Eva: 3 monedas'];
+function m4state(){
+  const out=[];
+  m4.blocks.forEach((b,i)=>{
+    const h=hashBlock(b),powOk=h.startsWith('0'.repeat(M4D)),linkOk=b.prev===(i===0?ZERO:out[i-1].h);
+    out.push({h,powOk,linkOk,ok:powOk&&linkOk});
+  });
+  return out;
+}
+function m4init(){
+  m4.blocks=[];m4.work=0;m4.attacked=false;m4.remined=false;m4.busy=false;
+  let prev=ZERO;
+  M4DATA.forEach((d,i)=>{const r=mineSync(i+1,prev,d,M4D);m4.blocks.push({index:i+1,prev,data:d,nonce:r.nonce});prev=r.hash;});
+  m4build();m4update();
+}
+function m4build(){
+  $('#m4chain').innerHTML=m4.blocks.map((b,i)=>`<div class="m4b" id="m4b${i}">
+    <h4>Bloque #${b.index} <span id="m4s${i}"></span></h4>
+    <div class="kv"><span>Hash previo</span><div class="hash sm" id="m4p${i}"></div></div>
+    <div class="kv"><span>Datos (editables)</span><input data-i="${i}" class="m4in" value="${esc(b.data)}"></div>
+    <div class="kv"><span>Nonce</span> <b id="m4n${i}"></b></div>
+    <div class="kv"><span>Hash</span><div class="hash sm" id="m4h${i}"></div></div>
+    <button data-remine="${i}" id="m4r${i}">⛏ Re-minar este bloque</button>
+  </div>`).join('<div class="m4arrow">⬇ 🔗</div>');
+  $$('.m4in').forEach(inp=>inp.addEventListener('input',()=>{m4.blocks[+inp.dataset.i].data=inp.value;m4update();}));
+  $$('[data-remine]').forEach(btn=>btn.onclick=()=>m4remine(+btn.dataset.remine));
+}
+function m4update(){
+  const st=m4state();let first=-1;
+  m4.blocks.forEach((b,i)=>{
+    const s=st[i];if(!s.ok&&first<0)first=i;
+    $('#m4b'+i).classList.toggle('bad',!s.ok);
+    $('#m4s'+i).innerHTML=s.ok?'<span class="yes">✔ válido</span>':`<span class="no">✘ ${!s.powOk?'sin Proof of Work':'enlace roto'}</span>`;
+    $('#m4p'+i).innerHTML=(s.linkOk?'':'<span class="no">✘ </span>')+b.prev;
+    $('#m4n'+i).textContent=b.nonce;
+    $('#m4h'+i).innerHTML=hl(s.h,M4D);
+  });
+  const all=first<0;
+  if(!all)m4.attacked=true;
+  $('#m4msg').innerHTML=all?(m4.attacked?'✅ <b class="yes">La cadena vuelve a ser válida.</b> Mira cuánto trabajo costó repararla.':'✅ <b class="yes">Cadena válida.</b> Edita los datos de un bloque para intentar falsificarla.'):`🚨 <b class="no">Cadena rota</b> desde el bloque #${first+1}. Los bloques siguientes dependen de su hash.`;
+  $('#m4work').textContent=`Hashes calculados al re-minar: ${m4.work.toLocaleString()}`;
+  if(all&&m4.attacked&&m4.remined)complete('m4');
+}
+async function m4remine(i){
+  if(m4.busy)return;m4.busy=true;
+  const b=m4.blocks[i],st=m4state(),btn=$('#m4r'+i);
+  btn.textContent='⛏ minando…';
+  b.prev=i===0?ZERO:st[i-1].h;
+  const target='0'.repeat(M4D),pre=`${b.index}|${b.prev}|${b.data}|`;
+  let n=0,found=false;
+  while(!found){
+    for(let k=0;k<3000;k++){m4.work++;if(sha256(pre+n).startsWith(target)){found=true;break;}n++;}
+    $('#m4work').textContent=`Hashes calculados al re-minar: ${m4.work.toLocaleString()}`;
+    if(!found)await new Promise(r=>setTimeout(r));
+  }
+  b.nonce=n;m4.remined=true;m4.busy=false;
+  btn.textContent='⛏ Re-minar este bloque';
+  m4update();
+}
+$('#m4reset').onclick=m4init;
+
+// ===== Reset de progreso =====
+$('#resetProg').onclick=()=>{if(confirm('¿Borrar todo tu progreso?')){save.done={};save.best=0;persist();renderNav();renderHome();m3hud();}};
+
+// ===== Inicio =====
+renderNav();renderHome();go('home');
+m1update();m2chainRender();m2refresh();m3hud();renderInspector();m4init();
+</script>
+</body>
+</html>
